@@ -6,7 +6,7 @@ authors = ["2005869 <2005869@aluno.univesp.br>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "3.12.*"
 fastapi = "^0.111.0"
 
 
@@ -41,6 +41,7 @@ addopts = '-p no:warnings'
 lint = 'ruff check . && ruff check . --diff'
 format = 'ruff check . --fix && ruff format .'
 run = 'fastapi dev fast_zero/app.py'
+runlocal = 'fastapi dev fast_zero/app.py --host 0.0.0.0'
 pre_test = 'task lint'
 test = 'pytest -s -x --cov=fast_zero -vv'
 post_test = 'coverage html'
