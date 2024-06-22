@@ -66,8 +66,74 @@ def test_update_user(client):
     }
 
 
+def test_update_user_not_found_maior_que_database(client):
+    response = client.put(
+        '/users/5',
+        json={
+            'username': 'bob',
+            'email': 'bob@example.com',
+            'password': 'mynewpassword',
+        },
+    )
+
+    assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {'detail': 'User not found'}
+
+
+def test_update_user_not_found_menor_que_database(client):
+    response = client.put(
+        '/users/0',
+        json={
+            'username': 'bob',
+            'email': 'bob@example.com',
+            'password': 'mynewpassword',
+        },
+    )
+
+    assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {'detail': 'User not found'}
+
+
+def test_get_user(client):
+    response = client.get('/users/1')
+
+    assert response.status_code == HTTPStatus.OK
+    assert response.json() == {
+        'username': 'bob',
+        'email': 'bob@example.com',
+        'id': 1,
+    }
+
+
+def test_get_user_id_invalido(client):
+    response = client.get('/users/5')
+
+    assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {'detail': 'User not found'}
+
+
+def test_delete_user_not_found_maior_que_database(client):
+    response = client.delete('/users/5')
+
+    assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {'detail': 'User not found'}
+
+
+def test_delete_user_not_found_menor_que_database(client):
+    response = client.delete('/users/0')
+
+    assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {'detail': 'User not found'}
+
+
 def test_delete_user(client):
     response = client.delete('/users/1')
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {'message': 'User deleted'}
+
+
+def test_delete_user_not_exist(client):
+    response = client.delete('/users/1')
+
+    assert response.status_code == HTTPStatus.NOT_FOUND
