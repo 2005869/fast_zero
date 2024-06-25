@@ -35,6 +35,34 @@ def test_create_user(client):
     }
 
 
+def test_error_create_user_username_already_exists(client, user):
+    response = client.post(
+        '/users',
+        json={
+            'username': 'Teste',
+            'email': 'alice@exemplo.com',
+            'password': 'secret',
+        },
+    )
+
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert response.json() == {'detail': 'Username already exists'}
+
+
+def test_error_create_user_email_already_exists(client, user):
+    response = client.post(
+        '/users',
+        json={
+            'username': 'alice',
+            'email': 'teste@test.com',
+            'password': 'secret',
+        },
+    )
+
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert response.json() == {'detail': 'Email already exists'}
+
+
 def test_read_users(client):
     response = client.get('/users')
 
@@ -101,18 +129,18 @@ def test_delete_user(client, user):
     assert response.json() == {'message': 'User deleted'}
 
 
-def test_get_user(client):
+def test_get_user_with_id(client, user):
     response = client.get('/users/1')
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {
-        'username': 'bob',
-        'email': 'bob@example.com',
+        'username': 'Teste',
+        'email': 'teste@test.com',
         'id': 1,
     }
 
 
-def test_get_user_id_invalido(client):
+def test_get_user_with_invalid_id(client):
     response = client.get('/users/5')
 
     assert response.status_code == HTTPStatus.NOT_FOUND
