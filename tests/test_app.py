@@ -1,5 +1,9 @@
+import time
 from http import HTTPStatus
 
+from sqlalchemy import select
+
+from fast_zero.models import User
 from fast_zero.schemas import UserPublic
 
 
@@ -165,3 +169,19 @@ def test_delete_user_not_exist(client):
     response = client.delete('/users/1')
 
     assert response.status_code == HTTPStatus.NOT_FOUND
+
+
+def test_field_update_at(client, user, session):
+    first_update = user.update_at
+    time.sleep(1)
+    client.put(
+        '/users/1',
+        json={
+            'username': 'Teste2',
+            'email': 'teste2@test.com',
+            'password': 'mynewpassword',
+        },
+    )
+    new_data = session.scalar(select(User).where(User.id == 1))
+    second_update = new_data.update_at
+    assert first_update != second_update
