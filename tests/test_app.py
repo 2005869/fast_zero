@@ -81,9 +81,10 @@ def test_read_users_with_users(client, user):
     assert response.json() == {'users': [user_schema]}
 
 
-def test_update_user(client, user):
+def test_update_user(client, user, token):
     response = client.put(
-        '/users/1',
+        f'/users/{user.id}',
+        headers={'Authorization': f'Bearer {token}'},
         json={
             'username': 'bob',
             'email': 'bob@example.com',
@@ -94,13 +95,14 @@ def test_update_user(client, user):
     assert response.json() == {
         'username': 'bob',
         'email': 'bob@example.com',
-        'id': 1,
+        'id': user.id,
     }
 
 
-def test_update_user_not_found_maior_que_database(client):
+def test_update_other_user(client, user, token):
     response = client.put(
         '/users/5',
+        headers={'Authorization': f'Bearer {token}'},
         json={
             'username': 'bob',
             'email': 'bob@example.com',
@@ -108,33 +110,21 @@ def test_update_user_not_found_maior_que_database(client):
         },
     )
 
-    assert response.status_code == HTTPStatus.NOT_FOUND
-    assert response.json() == {'detail': 'User not found'}
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert response.json() == {'detail': 'Not enough permissions'}
 
 
-def test_update_user_not_found_menor_que_database(client):
-    response = client.put(
-        '/users/0',
-        json={
-            'username': 'bob',
-            'email': 'bob@example.com',
-            'password': 'mynewpassword',
-        },
+def test_delete_user(client, user, token):
+    response = client.delete(
+        f'/users/{user.id}', headers={'Authorization': f'Bearer {token}'}
     )
-
-    assert response.status_code == HTTPStatus.NOT_FOUND
-    assert response.json() == {'detail': 'User not found'}
-
-
-def test_delete_user(client, user):
-    response = client.delete('/users/1')
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {'message': 'User deleted'}
 
 
-def test_get_user_with_id(client, user):
-    response = client.get('/users/1')
+def test_get_user_with_id(client, user, token):
+    response = client.get(f'/users/{user.id}')
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {
@@ -144,38 +134,26 @@ def test_get_user_with_id(client, user):
     }
 
 
-def test_get_user_with_invalid_id(client):
+def test_get_user_with_invalid_id(client, user, token):
     response = client.get('/users/5')
 
     assert response.status_code == HTTPStatus.NOT_FOUND
     assert response.json() == {'detail': 'User not found'}
 
 
-def test_delete_user_not_found_maior_que_database(client):
+def test_delete_other_user(client, user, token):
     response = client.delete('/users/5')
 
-    assert response.status_code == HTTPStatus.NOT_FOUND
-    assert response.json() == {'detail': 'User not found'}
+    assert response.status_code == HTTPStatus.UNAUTHORIZED
+    assert response.json() == {'detail': 'Not authenticated'}
 
 
-def test_delete_user_not_found_menor_que_database(client):
-    response = client.delete('/users/0')
-
-    assert response.status_code == HTTPStatus.NOT_FOUND
-    assert response.json() == {'detail': 'User not found'}
-
-
-def test_delete_user_not_exist(client):
-    response = client.delete('/users/1')
-
-    assert response.status_code == HTTPStatus.NOT_FOUND
-
-
-def test_field_update_at(client, user, session):
+def test_field_update_at(client, user, session, token):
     first_update = user.update_at
     time.sleep(1)
     client.put(
         '/users/1',
+        headers={'Authorization': f'Bearer {token}'},
         json={
             'username': 'Teste2',
             'email': 'teste2@test.com',
@@ -185,3 +163,15 @@ def test_field_update_at(client, user, session):
     new_data = session.scalar(select(User).where(User.id == 1))
     second_update = new_data.update_at
     assert first_update != second_update
+
+
+def test_get_token(client, user):
+    response = client.post(
+        '/token',
+        data={'username': user.email, 'password': user.clean_password},
+    )
+    token = response.json()
+
+    assert response.status_code == HTTPStatus.OK
+    assert 'access_token' in token
+    assert 'token_type' in token
