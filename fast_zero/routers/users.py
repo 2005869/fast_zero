@@ -16,12 +16,12 @@ from fast_zero.security import (
 router = APIRouter(prefix='/users', tags=['users'])
 
 
-session = Annotated[Session, Depends(get_session)]
+Session = Annotated[Session, Depends(get_session)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
 
 
 @router.post('/', status_code=HTTPStatus.CREATED, response_model=UserPublic)
-def create_user(user: UserSchema, session: session):
+def create_user(user: UserSchema, session: Session):
     db_user = session.scalar(
         select(User).where(
             (User.username == user.username) | (User.email == user.email)
@@ -52,7 +52,7 @@ def create_user(user: UserSchema, session: session):
 
 @router.get('/', response_model=UserList)
 def read_users(
-    session: session,
+    session: Session,
     skip: int = 0,
     limit: int = 100,
 ):
@@ -64,7 +64,7 @@ def read_users(
 def update_user(
     user_id: int,
     user: UserSchema,
-    session: session,
+    session: Session,
     current_user: CurrentUser,
 ):
     if current_user.id != user_id:
@@ -85,7 +85,7 @@ def update_user(
 @router.delete('/{user_id}', response_model=Message)
 def delete_user(
     user_id: int,
-    session: session,
+    session: Session,
     current_user: CurrentUser,
 ):
     if current_user.id != user_id:
@@ -99,7 +99,7 @@ def delete_user(
 
 
 @router.get('/{user_id}', response_model=UserPublic)
-def get_user(user_id: int, session: session):
+def get_user(user_id: int, session: Session):
     user_with_id = session.scalar(select(User).where(User.id == user_id))
 
     if not user_with_id:
