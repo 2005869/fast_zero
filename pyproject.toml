@@ -50,6 +50,6 @@ format = 'ruff check . --fix && ruff format .'
 run = 'fastapi dev fast_zero/app.py'
 runlocal = 'fastapi dev fast_zero/app.py --host 0.0.0.0'
 pre_test = 'task lint'
-test = 'pytest -s -x --cov=fast_zero -vv'
+test = 'pytest -s --cov=fast_zero -vv'
 post_test = 'coverage html'
 

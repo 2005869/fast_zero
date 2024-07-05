@@ -16,12 +16,12 @@ from fast_zero.security import (
 router = APIRouter(prefix='/users', tags=['users'])
 
 
-Session = Annotated[Session, Depends(get_session)]
-CurrentUser = Annotated[User, Depends(get_current_user)]
+T_Session = Annotated[Session, Depends(get_session)]
+T_CurrentUser = Annotated[User, Depends(get_current_user)]
 
 
 @router.post('/', status_code=HTTPStatus.CREATED, response_model=UserPublic)
-def create_user(user: UserSchema, session: Session):
+def create_user(user: UserSchema, session: T_Session):
     db_user = session.scalar(
         select(User).where(
             (User.username == user.username) | (User.email == user.email)
@@ -52,7 +52,7 @@ def create_user(user: UserSchema, session: Session):
 
 @router.get('/', response_model=UserList)
 def read_users(
-    session: Session,
+    session: T_Session,
     skip: int = 0,
     limit: int = 100,
 ):
@@ -64,12 +64,12 @@ def read_users(
 def update_user(
     user_id: int,
     user: UserSchema,
-    session: Session,
-    current_user: CurrentUser,
+    session: T_Session,
+    current_user: T_CurrentUser,
 ):
     if current_user.id != user_id:
         raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST, detail='Not enough permissions'
+            status_code=HTTPStatus.FORBIDDEN, detail='Not enough permissions'
         )
 
     current_user.username = user.username
@@ -85,12 +85,12 @@ def update_user(
 @router.delete('/{user_id}', response_model=Message)
 def delete_user(
     user_id: int,
-    session: Session,
-    current_user: CurrentUser,
+    session: T_Session,
+    current_user: T_CurrentUser,
 ):
     if current_user.id != user_id:
         raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST, detail='Not enough permissions'
+            status_code=HTTPStatus.FORBIDDEN, detail='Not enough permissions'
         )
     session.delete(current_user)
     session.commit()
@@ -99,7 +99,7 @@ def delete_user(
 
 
 @router.get('/{user_id}', response_model=UserPublic)
-def get_user(user_id: int, session: Session):
+def get_user(user_id: int, session: T_Session):
     user_with_id = session.scalar(select(User).where(User.id == user_id))
 
     if not user_with_id:

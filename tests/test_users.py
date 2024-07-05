@@ -96,7 +96,7 @@ def test_update_other_user(client, user, token):
         },
     )
 
-    assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert response.status_code == HTTPStatus.FORBIDDEN
     assert response.json() == {'detail': 'Not enough permissions'}
 
 
