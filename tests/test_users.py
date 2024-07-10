@@ -29,7 +29,7 @@ def test_error_create_user_username_already_exists(client, user):
     response = client.post(
         '/users',
         json={
-            'username': 'Teste',
+            'username': user.username,
             'email': 'alice@exemplo.com',
             'password': 'secret',
         },
@@ -44,7 +44,7 @@ def test_error_create_user_email_already_exists(client, user):
         '/users',
         json={
             'username': 'alice',
-            'email': 'teste@test.com',
+            'email': user.email,
             'password': 'secret',
         },
     )
@@ -114,9 +114,9 @@ def test_get_user_with_id(client, user, token):
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {
-        'username': 'Teste',
-        'email': 'teste@test.com',
-        'id': 1,
+        'username': user.username,
+        'email': user.email,
+        'id': user.id,
     }
 
 
@@ -149,3 +149,18 @@ def test_field_update_at(client, user, session, token):
     new_data = session.scalar(select(User).where(User.id == 1))
     second_update = new_data.update_at
     assert first_update != second_update
+
+
+def test_update_user_with_wrong_user(client, other_user, token):
+    response = client.put(
+        f'/users/{other_user.id}',
+        headers={'Authorization': f'Bearer {token}'},
+        json={
+            'username': 'bob',
+            'email': 'bob@example.com',
+            'password': 'mynewpassword',
+        },
+    )
+
+    assert response.status_code == HTTPStatus.FORBIDDEN
+    assert response.json() == {'detail': 'Not enough permissions'}
