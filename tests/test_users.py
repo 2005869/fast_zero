@@ -150,7 +150,7 @@ def test_field_update_at(client, user, session, token):
             },
         )
         session.expire(user)
-        user = session.scalar(select(User).where(User.id == 1))
+        user = session.scalar(select(User).where(User.id == user.id))
         second_update = user.update_at
 
     assert first_update != second_update
