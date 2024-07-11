@@ -1,6 +1,7 @@
-import time
+from datetime import datetime, timedelta
 from http import HTTPStatus
 
+from freezegun import freeze_time
 from sqlalchemy import select
 
 from fast_zero.models import User
@@ -136,18 +137,22 @@ def test_delete_other_user(client, user, token):
 
 def test_field_update_at(client, user, session, token):
     first_update = user.update_at
-    time.sleep(1)
-    client.put(
-        '/users/1',
-        headers={'Authorization': f'Bearer {token}'},
-        json={
-            'username': 'Teste2',
-            'email': 'teste2@test.com',
-            'password': 'mynewpassword',
-        },
-    )
-    new_data = session.scalar(select(User).where(User.id == 1))
-    second_update = new_data.update_at
+    frozen_time = datetime.now() + timedelta(minutes=15)
+
+    with freeze_time(frozen_time):
+        client.put(
+            '/users/1',
+            headers={'Authorization': f'Bearer {token}'},
+            json={
+                'username': 'Teste5',
+                'email': 'teste5@test.com',
+                'password': 'mynewpassword',
+            },
+        )
+        session.expire(user)
+        user = session.scalar(select(User).where(User.id == 1))
+        second_update = user.update_at
+
     assert first_update != second_update
 
 
