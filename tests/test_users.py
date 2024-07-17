@@ -140,8 +140,8 @@ def test_field_update_at(client, user, session, token):
     frozen_time = datetime.now() + timedelta(minutes=15)
 
     with freeze_time(frozen_time):
-        client.put(
-            '/users/1',
+        response = client.put(
+            f'/users/{user.id}',
             headers={'Authorization': f'Bearer {token}'},
             json={
                 'username': 'Teste5',
@@ -149,10 +149,11 @@ def test_field_update_at(client, user, session, token):
                 'password': 'mynewpassword',
             },
         )
-        session.expire(user)
-        user = session.scalar(select(User).where(User.id == user.id))
-        second_update = user.update_at
+        # session.expire(user)
+        user_up = session.scalar(select(User).where(User.id == user.id))
+        second_update = user_up.update_at
 
+    assert response.status_code == HTTPStatus.OK
     assert first_update != second_update
 
 
