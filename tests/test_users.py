@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 from http import HTTPStatus
 
 from freezegun import freeze_time
@@ -135,13 +135,12 @@ def test_delete_other_user(client, user, token):
     assert response.json() == {'detail': 'Not authenticated'}
 
 
-def test_field_update_at(client, user, session, token):
-    first_update = user.update_at
-    frozen_time = datetime.now() + timedelta(minutes=15)
+def test_field_update_at(client, freeze_user, session, token):
+    first_update = freeze_user.update_at
 
-    with freeze_time(frozen_time):
+    with freeze_time(datetime.now()):
         response = client.put(
-            f'/users/{user.id}',
+            f'/users/{freeze_user.id}',
             headers={'Authorization': f'Bearer {token}'},
             json={
                 'username': 'Teste5',
@@ -149,8 +148,8 @@ def test_field_update_at(client, user, session, token):
                 'password': 'mynewpassword',
             },
         )
-        # session.expire(user)
-        user_up = session.scalar(select(User).where(User.id == user.id))
+        client.post('/refresh_token')
+        user_up = session.scalar(select(User).where(User.id == freeze_user.id))
         second_update = user_up.update_at
 
     assert response.status_code == HTTPStatus.OK

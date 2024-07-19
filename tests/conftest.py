@@ -1,9 +1,12 @@
+from datetime import datetime
+
 import factory
 import pytest
 from fastapi.testclient import TestClient
+from freezegun import freeze_time
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-from sqlalchemy.pool import StaticPool
+from testcontainers.postgres import PostgresContainer
 
 from fast_zero.app import app
 from fast_zero.database import get_session
@@ -23,17 +26,22 @@ def client(session):
     app.dependency_overrides.clear()
 
 
+@pytest.fixture(scope='session')
+def engine():
+    with PostgresContainer('postgres:16', driver='psycopg') as postgres:
+        _engine = create_engine(postgres.get_connection_url())
+
+        with _engine.begin():
+            yield _engine
+
+
 @pytest.fixture()
-def session():
-    engine = create_engine(
-        'sqlite:///:memory:',
-        connect_args={'check_same_thread': False},
-        poolclass=StaticPool,
-    )
+def session(engine):
     table_registry.metadata.create_all(engine)
 
     with Session(engine) as session:
         yield session
+        session.rollback()
 
     table_registry.metadata.drop_all(engine)
 
@@ -58,6 +66,18 @@ def other_user(session):
     session.refresh(user)
     user.clean_password = 'testtest'
     return user
+
+
+@pytest.fixture()
+def freeze_user(session):
+    with freeze_time(datetime.now()):
+        password = 'testtest'
+        user = UserFactory(password=get_password_hash(password))
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+        user.clean_password = 'testtest'
+        return user
 
 
 @pytest.fixture()
