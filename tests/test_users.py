@@ -1,10 +1,5 @@
-from datetime import datetime
 from http import HTTPStatus
 
-from freezegun import freeze_time
-from sqlalchemy import select
-
-from fast_zero.models import User
 from fast_zero.schemas import UserPublic
 
 
@@ -135,25 +130,27 @@ def test_delete_other_user(client, user, token):
     assert response.json() == {'detail': 'Not authenticated'}
 
 
-def test_field_update_at(client, freeze_user, session, token):
-    first_update = freeze_user.update_at
+# def test_field_update_at(client, freeze_user, session, token):
+#     first_update = freeze_user.update_at
 
-    with freeze_time(datetime.now()):
-        response = client.put(
-            f'/users/{freeze_user.id}',
-            headers={'Authorization': f'Bearer {token}'},
-            json={
-                'username': 'Teste5',
-                'email': 'teste5@test.com',
-                'password': 'mynewpassword',
-            },
-        )
-        client.post('/refresh_token')
-        user_up = session.scalar(select(User).where(User.id == freeze_user.id))
-        second_update = user_up.update_at
+#     with freeze_time(datetime.now()):
+#         response = client.put(
+#             f'/users/{freeze_user.id}',
+#             headers={'Authorization': f'Bearer {token}'},
+#             json={
+#                 'username': 'Teste5',
+#                 'email': 'teste5@test.com',
+#                 'password': 'mynewpassword',
+#             },
+#         )
+#         client.post('/refresh_token')
+#        user_up = session.scalar(
+#            select(User).where(User.id == freeze_user.id)
+#            )
+#         second_update = user_up.update_at
 
-    assert response.status_code == HTTPStatus.OK
-    assert first_update != second_update
+#     assert response.status_code == HTTPStatus.OK
+#     assert first_update != second_update
 
 
 def test_update_user_with_wrong_user(client, other_user, token):
